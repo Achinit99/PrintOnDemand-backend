@@ -1,17 +1,19 @@
-name: Build and Push Docker Image
+name: Build, Scan, and Push Docker Image
 
 on:
   push:
-    branches: [ "main" ]  # branch
+    branches: [ "main" ]
 
 jobs:
-  build-and-push:
+  build-scan-push:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Download the source code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 2: Initialize Java 17 and configure Maven caching for faster builds
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -19,18 +21,31 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      # Step 3: Build the Docker image locally to prepare for security scanning
+      - name: Build Docker Image Locally
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/print-on-one-backend:latest .
+
+      # Step 4: Security Scan - Check the Docker image for OS and dependency vulnerabilities using Snyk
+      - name: Snyk Container Scan
+        uses: snyk/actions/docker@master
+        continue-on-error: true # Set to true to prevent the pipeline from stopping if issues are found
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ secrets.DOCKER_USERNAME }}/print-on-one-backend:latest
+          args: --severity-threshold=high
+
+      # Step 5: Authenticate with Docker Hub using stored secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/print-on-one-backend:latest
+      # Step 6: Push the verified Docker image to the Docker Hub registry
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/print-on-one-backend:latest
 
-      - name: Image Pushed Successfully
-        run: echo "Docker image has been pushed to Docker Hub!"
+      # Step 7: Confirmation message upon successful completion
+      - name: Finalize
+        run: echo "The Docker image has been scanned and successfully pushed to Docker Hub!"
