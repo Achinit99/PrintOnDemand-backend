@@ -80,9 +80,16 @@ jobs:
             sudo docker stop backend || true
             sudo docker rm backend || true
             
-            # 5. Run the new container
+            # 5. Run the new container with DB Environment Variables
             echo "Starting the new container..."
-            sudo docker run -d --name backend -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/print-on-one-backend:latest
+            sudo docker run -d \
+              --name backend \
+              -p 8080:8080 \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_NAME=${{ secrets.DB_NAME }} \
+              -e DB_USER=${{ secrets.DB_USERNAME }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              ${{ secrets.DOCKER_USERNAME }}/print-on-one-backend:latest
             
             # 6. Cleanup unused images
             echo "Cleaning up old images..."
