@@ -21,12 +21,31 @@ public class UserService {
     private ModelMapper modelMapper;
 
     public List<UserDTO> getAllUsers() {
-        List<User>userList = userRepo.findAll();
+        List<User> userList = userRepo.findAll();
         return modelMapper.map(userList, new TypeToken<List<UserDTO>>(){}.getType());
+    }
 
-    }
     public UserDTO addUser(UserDTO userDTO) {
-        userRepo.save(modelMapper.map(userDTO, User.class));
-        return userDTO;
+        User user = modelMapper.map(userDTO, User.class);
+
+        // Save user with password (for now, without hashing)
+        // TODO: Add password hashing with Spring Security BCryptPasswordEncoder in production
+        User savedUser = userRepo.save(user);
+
+        // Map back to DTO but don't include password in response
+        UserDTO responseDTO = modelMapper.map(savedUser, UserDTO.class);
+        responseDTO.setPassword(null); // Don't return password
+
+        return responseDTO;
     }
+
+    public boolean loginUser(UserDTO userDTO) {
+        User user = userRepo.findByEmail(userDTO.getEmail());
+
+        if (user != null) {
+            return user.getPassword().equals(userDTO.getPassword());
+        }
+        return false;
+    }
+
 }

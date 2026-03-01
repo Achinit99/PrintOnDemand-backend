@@ -54,7 +54,7 @@ jobs:
 
           # SSH Proxy Setup (Bastion)
           proxy_host: ${{ secrets.EC2_HOST }}  # Bastion IP (Public)
-          proxy_username: ec2-user
+          proxy_username: ubuntu
           proxy_key: ${{ secrets.EC2_SSH_KEY }}
 
           script: |

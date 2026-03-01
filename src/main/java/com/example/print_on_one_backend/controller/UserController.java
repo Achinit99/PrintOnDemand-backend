@@ -24,6 +24,14 @@ public class UserController {
         return userService.addUser(userDTO);
     }
 
-
+    @PostMapping({"/login"})
+    public String loginUser(@RequestBody UserDTO userDTO) {
+        boolean isAuthenticated = userService.loginUser(userDTO);
+        if(isAuthenticated) {
+            return "Login Success";
+        } else {
+            return "Invalid Credentials";
+        }
+    }
 }
 
